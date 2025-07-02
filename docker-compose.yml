@@ -5,15 +5,15 @@ services:
     volumes:
       - ./db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=sleepdb
+      - POSTGRES_USER=sleepuser
+      - POSTGRES_PASSWORD=sleeppass
     expose:
       - "5432"
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user"]
+      test: ["CMD-SHELL", "pg_isready -U sleepuser -d sleepdb"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,9 +25,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/postgres
-      - SPRING_DATASOURCE_USER=user
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_db:5432/sleepdb
+      - SPRING_DATASOURCE_USER=sleepuser
+      - SPRING_DATASOURCE_PASSWORD=sleeppass
     depends_on:
       db:
         condition: service_healthy

@@ -46,19 +46,18 @@ class UserRepository(private val jdbcTemplate: JdbcTemplate) {
     }
 
     fun save(user: User): User {
-        val keyHolder = GeneratedKeyHolder()
+        jdbcTemplate.update(
+            "INSERT INTO users (username, email) VALUES (?, ?)",
+            user.username,
+            user.email
+        )
         
-        jdbcTemplate.update({ connection ->
-            val ps = connection.prepareStatement(
-                "INSERT INTO users (username, email) VALUES (?, ?)",
-                Statement.RETURN_GENERATED_KEYS
-            )
-            ps.setString(1, user.username)
-            ps.setString(2, user.email)
-            ps
-        }, keyHolder)
-
-        val generatedId = keyHolder.key?.toLong() ?: throw RuntimeException("Failed to get generated ID")
+        // Get the generated ID using a separate query
+        val generatedId = jdbcTemplate.queryForObject(
+            "SELECT currval(pg_get_serial_sequence('users', 'id'))",
+            Long::class.java
+        ) ?: throw RuntimeException("Failed to get generated ID")
+        
         return findById(generatedId)!!
     }
 
