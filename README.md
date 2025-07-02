@@ -144,4 +144,93 @@ fun createUser(@Valid @RequestBody request: CreateUserRequest): ResponseEntity<A
 }
 ```
 
-This refactoring significantly improves the codebase's maintainability, testability, and adherence to best practices while providing a better developer and user experience. 
+This refactoring significantly improves the codebase's maintainability, testability, and adherence to best practices while providing a better developer and user experience.
+
+## Getting Started with Docker
+
+### Prerequisites
+- Docker
+- Docker Compose
+- Ports 5432 (PostgreSQL) and 8080 (API) must be available
+
+### Quick Start with Docker Compose
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd BackendTakeHomeTest
+   ```
+
+2. **Start the application**
+   ```bash
+   docker-compose up
+   ```
+   
+   Or run in detached mode:
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Build and start (if you've made changes)**
+   ```bash
+   docker-compose up --build
+   ```
+
+4. **Stop the application**
+   ```bash
+   docker-compose down
+   ```
+
+### Docker Services
+
+The application consists of two services:
+
+- **PostgreSQL Database** (port 5432)
+  - Database: `postgres`
+  - Username: `user`
+  - Password: `password`
+
+- **Sleep Logger API** (port 8080)
+  - Spring Boot application
+  - Connects to PostgreSQL database
+  - REST API endpoints available
+
+### API Endpoints
+
+Once the application is running, you can access the API at:
+- **Base URL**: `http://localhost:8080`
+- **API Documentation**: Available through the endpoints below
+
+#### User Management
+- `POST /api/users` - Create a new user
+- `GET /api/users/{id}` - Get user by ID
+- `GET /api/users` - Get all users
+- `GET /api/users/by-username/{username}` - Get user by username
+
+#### Sleep Log Management
+- `POST /api/users/{userId}/sleep` - Create sleep log
+- `GET /api/users/{userId}/sleep/last-night` - Get last night's sleep
+- `GET /api/users/{userId}/sleep/statistics/30-days` - Get 30-day statistics
+
+### Testing the API
+
+You can test the API using the provided test script:
+```bash
+./test_api.sh
+```
+
+Or use the Postman collection:
+- Import `Sleep_Logger_API.postman_collection.json` into Postman
+
+### Troubleshooting
+
+1. **Port conflicts**: Ensure ports 5432 and 8080 are not in use
+2. **Database connection**: Check if PostgreSQL container is running
+3. **API not responding**: Verify the Spring Boot application started successfully
+
+### Development
+
+For development, you can:
+- Mount the source code as a volume for live reloading
+- Use the existing Docker setup for consistent environments
+- Run tests using the provided test suite 
