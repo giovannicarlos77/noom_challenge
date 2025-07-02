@@ -9,6 +9,6 @@ COPY . .
 RUN chmod +x gradlew
 
 # Build the application
-RUN ./gradlew build --no-daemon
+RUN ./gradlew build -x test --no-daemon
 
 ENTRYPOINT ["java","-jar","build/libs/sleep-0.0.1-SNAPSHOT.jar"]

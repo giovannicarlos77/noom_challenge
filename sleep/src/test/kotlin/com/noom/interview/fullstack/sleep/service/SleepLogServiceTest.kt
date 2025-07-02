@@ -63,7 +63,7 @@ class SleepLogServiceTest {
 
         `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
-        `when`(sleepLogRepository.save(any())).thenReturn(expectedSleepLog)
+        `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenReturn(expectedSleepLog)
 
         // When
         val result = sleepLogService.createSleepLog(testUser.id!!, request)
@@ -77,7 +77,7 @@ class SleepLogServiceTest {
 
         verify(userService).validateUserExists(testUser.id!!)
         verify(sleepLogRepository).findByUserIdAndDate(testUser.id!!, request.sleepDate)
-        verify(sleepLogRepository).save(any())
+        verify(sleepLogRepository).save(any(SleepLog::class.java))
     }
 
     @Test
