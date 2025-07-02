@@ -2,13 +2,13 @@ FROM openjdk:11
 
 WORKDIR /app
 
-COPY build.gradle gradlew settings.gradle ./
-COPY gradle/ gradle/
+# Copy all files
+COPY . .
 
-RUN ./gradlew wrapper
+# Make gradlew executable
+RUN chmod +x gradlew
 
-COPY src/ src
-
-RUN ./gradlew build
+# Build the application
+RUN ./gradlew build --no-daemon
 
 ENTRYPOINT ["java","-jar","build/libs/sleep-0.0.1-SNAPSHOT.jar"]
