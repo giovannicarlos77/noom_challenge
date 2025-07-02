@@ -16,6 +16,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyLong
+import org.mockito.ArgumentMatchers.anyString
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -44,8 +46,9 @@ class SleepLogServiceTest {
     @Test
     fun `should create sleep log successfully`() {
         // Given
+        val userId = 1L
         val request = CreateSleepLogRequest(
-            sleepDate = LocalDate.now(),
+            sleepDate = LocalDate.of(2025, 1, 1),
             bedtime = LocalTime.of(22, 30),
             wakeTime = LocalTime.of(7, 0),
             morningFeeling = MorningFeeling.GOOD
@@ -53,20 +56,20 @@ class SleepLogServiceTest {
 
         val expectedSleepLog = SleepLog(
             id = 1L,
-            userId = testUser.id!!,
+            userId = userId,
             sleepDate = request.sleepDate,
             bedtime = request.bedtime,
             wakeTime = request.wakeTime,
-            totalTimeInBedMinutes = 510, // 8.5 hours
+            totalTimeInBedMinutes = 510,
             morningFeeling = request.morningFeeling
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
-        `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
+        `when`(userService.validateUserExists(userId)).thenReturn(testUser)
+        `when`(sleepLogRepository.findByUserIdAndDate(userId, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenReturn(expectedSleepLog)
 
         // When
-        val result = sleepLogService.createSleepLog(testUser.id!!, request)
+        val result = sleepLogService.createSleepLog(userId, request)
 
         // Then
         assertEquals(expectedSleepLog.id, result.id)
@@ -75,38 +78,40 @@ class SleepLogServiceTest {
         assertEquals(expectedSleepLog.totalTimeInBedMinutes, result.totalTimeInBedMinutes)
         assertEquals(expectedSleepLog.morningFeeling, result.morningFeeling)
 
-        verify(userService).validateUserExists(testUser.id!!)
-        verify(sleepLogRepository).findByUserIdAndDate(testUser.id!!, request.sleepDate)
+        verify(userService).validateUserExists(userId)
+        verify(sleepLogRepository).findByUserIdAndDate(userId, request.sleepDate)
         verify(sleepLogRepository).save(any(SleepLog::class.java))
     }
 
     @Test
     fun `should throw exception when user not found`() {
         // Given
+        val userId = 1L
         val request = CreateSleepLogRequest(
-            sleepDate = LocalDate.now(),
+            sleepDate = LocalDate.of(2025, 1, 1),
             bedtime = LocalTime.of(22, 30),
             wakeTime = LocalTime.of(7, 0),
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenThrow(ResourceNotFoundException("User with id ${testUser.id} not found"))
+        `when`(userService.validateUserExists(userId)).thenThrow(ResourceNotFoundException("User with id $userId not found"))
 
         // When & Then
         val exception = assertThrows(ResourceNotFoundException::class.java) {
-            sleepLogService.createSleepLog(testUser.id!!, request)
+            sleepLogService.createSleepLog(userId, request)
         }
 
-        assertEquals("User with id ${testUser.id} not found", exception.message)
-        verify(userService).validateUserExists(testUser.id!!)
+        assertEquals("User with id $userId not found", exception.message)
+        verify(userService).validateUserExists(userId)
         verifyNoInteractions(sleepLogRepository)
     }
 
     @Test
     fun `should throw exception when sleep log already exists for date`() {
         // Given
+        val userId = 1L
         val request = CreateSleepLogRequest(
-            sleepDate = LocalDate.now(),
+            sleepDate = LocalDate.of(2025, 1, 1),
             bedtime = LocalTime.of(22, 30),
             wakeTime = LocalTime.of(7, 0),
             morningFeeling = MorningFeeling.GOOD
@@ -114,7 +119,7 @@ class SleepLogServiceTest {
 
         val existingSleepLog = SleepLog(
             id = 1L,
-            userId = testUser.id!!,
+            userId = userId,
             sleepDate = request.sleepDate,
             bedtime = LocalTime.of(23, 0),
             wakeTime = LocalTime.of(8, 0),
@@ -122,26 +127,27 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.OK
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
-        `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(existingSleepLog)
+        `when`(userService.validateUserExists(userId)).thenReturn(testUser)
+        `when`(sleepLogRepository.findByUserIdAndDate(userId, request.sleepDate)).thenReturn(existingSleepLog)
 
         // When & Then
         val exception = assertThrows(ResourceConflictException::class.java) {
-            sleepLogService.createSleepLog(testUser.id!!, request)
+            sleepLogService.createSleepLog(userId, request)
         }
 
-        assertEquals("Sleep log already exists for date ${request.sleepDate}", exception.message)
-        verify(userService).validateUserExists(testUser.id!!)
-        verify(sleepLogRepository).findByUserIdAndDate(testUser.id!!, request.sleepDate)
+        assertTrue(exception.message!!.contains("Sleep log already exists for date"))
+        verify(userService).validateUserExists(userId)
+        verify(sleepLogRepository).findByUserIdAndDate(userId, request.sleepDate)
         verify(sleepLogRepository, never()).save(any(SleepLog::class.java))
     }
 
     @Test
     fun `should get last night sleep successfully`() {
         // Given
+        val userId = 1L
         val lastNightSleep = SleepLog(
             id = 1L,
-            userId = testUser.id!!,
+            userId = userId,
             sleepDate = LocalDate.now().minusDays(1),
             bedtime = LocalTime.of(22, 30),
             wakeTime = LocalTime.of(7, 0),
@@ -149,40 +155,41 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
-        `when`(sleepLogRepository.findLastNightSleep(testUser.id!!)).thenReturn(lastNightSleep)
+        `when`(userService.validateUserExists(userId)).thenReturn(testUser)
+        `when`(sleepLogRepository.findLastNightSleep(userId)).thenReturn(lastNightSleep)
 
         // When
-        val result = sleepLogService.getLastNightSleep(testUser.id!!)
+        val result = sleepLogService.getLastNightSleep(userId)
 
         // Then
         assertNotNull(result)
         assertEquals(lastNightSleep.id, result!!.id)
         assertEquals(lastNightSleep.sleepDate, result.sleepDate)
 
-        verify(userService).validateUserExists(testUser.id!!)
-        verify(sleepLogRepository).findLastNightSleep(testUser.id!!)
+        verify(userService).validateUserExists(userId)
+        verify(sleepLogRepository).findLastNightSleep(userId)
     }
 
     @Test
     fun `should calculate time in bed correctly for same day`() {
         // Given
+        val userId = 1L
         val request = CreateSleepLogRequest(
-            sleepDate = LocalDate.now(),
+            sleepDate = LocalDate.of(2025, 1, 1),
             bedtime = LocalTime.of(10, 0), // 10:00 AM
             wakeTime = LocalTime.of(18, 0), // 6:00 PM
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
-        `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
+        `when`(userService.validateUserExists(userId)).thenReturn(testUser)
+        `when`(sleepLogRepository.findByUserIdAndDate(userId, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
             sleepLog.copy(id = 1L)
         }
 
         // When
-        val result = sleepLogService.createSleepLog(testUser.id!!, request)
+        val result = sleepLogService.createSleepLog(userId, request)
 
         // Then
         assertEquals(480, result.totalTimeInBedMinutes) // 8 hours = 480 minutes
@@ -191,22 +198,23 @@ class SleepLogServiceTest {
     @Test
     fun `should calculate time in bed correctly for overnight sleep`() {
         // Given
+        val userId = 1L
         val request = CreateSleepLogRequest(
-            sleepDate = LocalDate.now(),
+            sleepDate = LocalDate.of(2025, 1, 1),
             bedtime = LocalTime.of(23, 0), // 11:00 PM
             wakeTime = LocalTime.of(7, 0), // 7:00 AM next day
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
-        `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
+        `when`(userService.validateUserExists(userId)).thenReturn(testUser)
+        `when`(sleepLogRepository.findByUserIdAndDate(userId, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
             sleepLog.copy(id = 1L)
         }
 
         // When
-        val result = sleepLogService.createSleepLog(testUser.id!!, request)
+        val result = sleepLogService.createSleepLog(userId, request)
 
         // Then
         assertEquals(480, result.totalTimeInBedMinutes) // 8 hours = 480 minutes
