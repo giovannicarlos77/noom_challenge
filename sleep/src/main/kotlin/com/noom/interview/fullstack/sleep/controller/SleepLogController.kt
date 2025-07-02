@@ -1,5 +1,7 @@
 package com.noom.interview.fullstack.sleep.controller
 
+import com.noom.interview.fullstack.sleep.constants.MessageConstants
+import com.noom.interview.fullstack.sleep.dto.ApiResponse
 import com.noom.interview.fullstack.sleep.dto.CreateSleepLogRequest
 import com.noom.interview.fullstack.sleep.dto.SleepStatistics
 import com.noom.interview.fullstack.sleep.model.SleepLog
@@ -18,40 +20,34 @@ class SleepLogController(private val sleepLogService: SleepLogService) {
     fun createSleepLog(
         @PathVariable userId: Long,
         @Valid @RequestBody request: CreateSleepLogRequest
-    ): ResponseEntity<SleepLog> {
-        return try {
-            val sleepLog = sleepLogService.createSleepLog(userId, request)
-            ResponseEntity.status(HttpStatus.CREATED).body(sleepLog)
-        } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
-        }
+    ): ResponseEntity<ApiResponse<SleepLog>> {
+        val sleepLog = sleepLogService.createSleepLog(userId, request)
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(ApiResponse.success(sleepLog, MessageConstants.SLEEP_LOG_CREATED_SUCCESSFULLY))
     }
 
     @GetMapping("/last-night")
-    fun getLastNightSleep(@PathVariable userId: Long): ResponseEntity<SleepLog> {
-        return try {
-            val sleepLog = sleepLogService.getLastNightSleep(userId)
-            if (sleepLog != null) {
-                ResponseEntity.ok(sleepLog)
-            } else {
-                ResponseEntity.notFound().build()
-            }
-        } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
+    fun getLastNightSleep(@PathVariable userId: Long): ResponseEntity<ApiResponse<SleepLog>> {
+        val sleepLog = sleepLogService.getLastNightSleep(userId)
+        return if (sleepLog != null) {
+            ResponseEntity.ok(ApiResponse.success(sleepLog))
+        } else {
+            ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(MessageConstants.RESOURCE_NOT_FOUND))
         }
     }
 
     @GetMapping("/statistics/30-days")
-    fun getLast30DaysStatistics(@PathVariable userId: Long): ResponseEntity<SleepStatistics> {
-        return try {
-            val statistics = sleepLogService.getLast30DaysStatistics(userId)
-            if (statistics != null) {
-                ResponseEntity.ok(statistics)
-            } else {
-                ResponseEntity.notFound().build()
-            }
-        } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().build()
+    fun getLast30DaysStatistics(@PathVariable userId: Long): ResponseEntity<ApiResponse<SleepStatistics>> {
+        val statistics = sleepLogService.getLast30DaysStatistics(userId)
+        return if (statistics != null) {
+            ResponseEntity.ok(ApiResponse.success(statistics))
+        } else {
+            ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(MessageConstants.RESOURCE_NOT_FOUND))
         }
     }
 }
