@@ -2,6 +2,7 @@ package com.noom.interview.fullstack.sleep.service
 
 import com.noom.interview.fullstack.sleep.dto.CreateSleepLogRequest
 import com.noom.interview.fullstack.sleep.exception.ResourceConflictException
+import com.noom.interview.fullstack.sleep.exception.ResourceNotFoundException
 import com.noom.interview.fullstack.sleep.model.MorningFeeling
 import com.noom.interview.fullstack.sleep.model.SleepLog
 import com.noom.interview.fullstack.sleep.model.User
@@ -60,7 +61,7 @@ class SleepLogServiceTest {
             morningFeeling = request.morningFeeling
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any())).thenReturn(expectedSleepLog)
 
@@ -89,10 +90,10 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenThrow(IllegalArgumentException("User with id ${testUser.id} not found"))
+        `when`(userService.validateUserExists(testUser.id!!)).thenThrow(ResourceNotFoundException("User with id ${testUser.id} not found"))
 
         // When & Then
-        val exception = assertThrows(IllegalArgumentException::class.java) {
+        val exception = assertThrows(ResourceNotFoundException::class.java) {
             sleepLogService.createSleepLog(testUser.id!!, request)
         }
 
@@ -121,7 +122,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.OK
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(existingSleepLog)
 
         // When & Then
@@ -148,7 +149,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findLastNightSleep(testUser.id!!)).thenReturn(lastNightSleep)
 
         // When
@@ -173,7 +174,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
@@ -197,7 +198,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(testUser)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
