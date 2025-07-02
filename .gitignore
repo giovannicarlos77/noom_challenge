@@ -2,4 +2,6 @@
 /db/ 
 
 # Ignore Gradle build files
-.gradle/ 
+.gradle/
+# Ignore build output
+build/ 
