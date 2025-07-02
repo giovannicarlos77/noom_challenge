@@ -3,7 +3,7 @@ services:
     container_name: postgres_db
     image: postgres:13-alpine
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=sleepdb
       - POSTGRES_USER=sleepuser
@@ -31,3 +31,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+volumes:
+  postgres_data:

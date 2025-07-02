@@ -29,25 +29,24 @@ class SleepLogRepository(private val jdbcTemplate: JdbcTemplate) {
     }
 
     fun save(sleepLog: SleepLog): SleepLog {
-        val keyHolder = GeneratedKeyHolder()
+        jdbcTemplate.update(
+            """INSERT INTO sleep_logs (user_id, sleep_date, bedtime, wake_time, 
+               total_time_in_bed_minutes, morning_feeling) 
+               VALUES (?, ?, ?, ?, ?, ?::morning_feeling)""",
+            sleepLog.userId,
+            java.sql.Date.valueOf(sleepLog.sleepDate),
+            java.sql.Time.valueOf(sleepLog.bedtime),
+            java.sql.Time.valueOf(sleepLog.wakeTime),
+            sleepLog.totalTimeInBedMinutes,
+            sleepLog.morningFeeling.name
+        )
         
-        jdbcTemplate.update({ connection ->
-            val ps = connection.prepareStatement(
-                """INSERT INTO sleep_logs (user_id, sleep_date, bedtime, wake_time, 
-                   total_time_in_bed_minutes, morning_feeling) 
-                   VALUES (?, ?, ?, ?, ?, ?::morning_feeling)""",
-                Statement.RETURN_GENERATED_KEYS
-            )
-            ps.setLong(1, sleepLog.userId)
-            ps.setDate(2, java.sql.Date.valueOf(sleepLog.sleepDate))
-            ps.setTime(3, java.sql.Time.valueOf(sleepLog.bedtime))
-            ps.setTime(4, java.sql.Time.valueOf(sleepLog.wakeTime))
-            ps.setInt(5, sleepLog.totalTimeInBedMinutes)
-            ps.setString(6, sleepLog.morningFeeling.name)
-            ps
-        }, keyHolder)
-
-        val generatedId = keyHolder.key?.toLong() ?: throw RuntimeException("Failed to get generated ID")
+        // Get the generated ID using a separate query
+        val generatedId = jdbcTemplate.queryForObject(
+            "SELECT currval(pg_get_serial_sequence('sleep_logs', 'id'))",
+            Long::class.java
+        ) ?: throw RuntimeException("Failed to get generated ID")
+        
         return findById(generatedId)!!
     }
 
