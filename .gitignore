@@ -1,2 +1,5 @@
 # Ignore database and generated files
 /db/ 
+
+# Ignore Gradle build files
+.gradle/ 
