@@ -1,11 +1,12 @@
 package com.noom.interview.fullstack.sleep.service
 
 import com.noom.interview.fullstack.sleep.dto.CreateSleepLogRequest
+import com.noom.interview.fullstack.sleep.exception.ResourceConflictException
 import com.noom.interview.fullstack.sleep.model.MorningFeeling
 import com.noom.interview.fullstack.sleep.model.SleepLog
 import com.noom.interview.fullstack.sleep.model.User
 import com.noom.interview.fullstack.sleep.repository.SleepLogRepository
-import com.noom.interview.fullstack.sleep.repository.UserRepository
+import com.noom.interview.fullstack.sleep.service.UserService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
+import org.mockito.ArgumentMatchers.any
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -24,7 +25,7 @@ class SleepLogServiceTest {
     private lateinit var sleepLogRepository: SleepLogRepository
 
     @Mock
-    private lateinit var userRepository: UserRepository
+    private lateinit var userService: UserService
 
     private lateinit var sleepLogService: SleepLogService
 
@@ -36,7 +37,7 @@ class SleepLogServiceTest {
 
     @BeforeEach
     fun setUp() {
-        sleepLogService = SleepLogService(sleepLogRepository, userRepository)
+        sleepLogService = SleepLogService(sleepLogRepository, userService)
     }
 
     @Test
@@ -59,7 +60,7 @@ class SleepLogServiceTest {
             morningFeeling = request.morningFeeling
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(testUser)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any())).thenReturn(expectedSleepLog)
 
@@ -73,7 +74,7 @@ class SleepLogServiceTest {
         assertEquals(expectedSleepLog.totalTimeInBedMinutes, result.totalTimeInBedMinutes)
         assertEquals(expectedSleepLog.morningFeeling, result.morningFeeling)
 
-        verify(userRepository).findById(testUser.id!!)
+        verify(userService).validateUserExists(testUser.id!!)
         verify(sleepLogRepository).findByUserIdAndDate(testUser.id!!, request.sleepDate)
         verify(sleepLogRepository).save(any())
     }
@@ -88,7 +89,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(null)
+        `when`(userService.validateUserExists(testUser.id!!)).thenThrow(IllegalArgumentException("User with id ${testUser.id} not found"))
 
         // When & Then
         val exception = assertThrows(IllegalArgumentException::class.java) {
@@ -96,7 +97,7 @@ class SleepLogServiceTest {
         }
 
         assertEquals("User with id ${testUser.id} not found", exception.message)
-        verify(userRepository).findById(testUser.id!!)
+        verify(userService).validateUserExists(testUser.id!!)
         verifyNoInteractions(sleepLogRepository)
     }
 
@@ -120,16 +121,16 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.OK
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(testUser)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(existingSleepLog)
 
         // When & Then
-        val exception = assertThrows(IllegalArgumentException::class.java) {
+        val exception = assertThrows(ResourceConflictException::class.java) {
             sleepLogService.createSleepLog(testUser.id!!, request)
         }
 
         assertEquals("Sleep log already exists for date ${request.sleepDate}", exception.message)
-        verify(userRepository).findById(testUser.id!!)
+        verify(userService).validateUserExists(testUser.id!!)
         verify(sleepLogRepository).findByUserIdAndDate(testUser.id!!, request.sleepDate)
         verify(sleepLogRepository, never()).save(any(SleepLog::class.java))
     }
@@ -147,7 +148,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(testUser)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
         `when`(sleepLogRepository.findLastNightSleep(testUser.id!!)).thenReturn(lastNightSleep)
 
         // When
@@ -158,7 +159,7 @@ class SleepLogServiceTest {
         assertEquals(lastNightSleep.id, result!!.id)
         assertEquals(lastNightSleep.sleepDate, result.sleepDate)
 
-        verify(userRepository).findById(testUser.id!!)
+        verify(userService).validateUserExists(testUser.id!!)
         verify(sleepLogRepository).findLastNightSleep(testUser.id!!)
     }
 
@@ -172,7 +173,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(testUser)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
@@ -196,7 +197,7 @@ class SleepLogServiceTest {
             morningFeeling = MorningFeeling.GOOD
         )
 
-        `when`(userRepository.findById(testUser.id!!)).thenReturn(testUser)
+        `when`(userService.validateUserExists(testUser.id!!)).thenReturn(Unit)
         `when`(sleepLogRepository.findByUserIdAndDate(testUser.id!!, request.sleepDate)).thenReturn(null)
         `when`(sleepLogRepository.save(any(SleepLog::class.java))).thenAnswer { invocation ->
             val sleepLog = invocation.getArgument<SleepLog>(0)
