@@ -1,12 +1,13 @@
 package com.noom.interview.fullstack.sleep.service
 
+import com.noom.interview.fullstack.sleep.constants.MessageConstants
 import com.noom.interview.fullstack.sleep.dto.CreateSleepLogRequest
 import com.noom.interview.fullstack.sleep.dto.DateRange
 import com.noom.interview.fullstack.sleep.dto.SleepStatistics
+import com.noom.interview.fullstack.sleep.exception.ResourceConflictException
 import com.noom.interview.fullstack.sleep.model.MorningFeeling
 import com.noom.interview.fullstack.sleep.model.SleepLog
 import com.noom.interview.fullstack.sleep.repository.SleepLogRepository
-import com.noom.interview.fullstack.sleep.repository.UserRepository
 import org.springframework.stereotype.Service
 import java.time.Duration
 import java.time.LocalDate
@@ -15,17 +16,16 @@ import java.time.LocalTime
 @Service
 class SleepLogService(
     private val sleepLogRepository: SleepLogRepository,
-    private val userRepository: UserRepository
+    private val userService: UserService
 ) {
 
     fun createSleepLog(userId: Long, request: CreateSleepLogRequest): SleepLog {
         // Verify user exists
-        userRepository.findById(userId) 
-            ?: throw IllegalArgumentException("User with id $userId not found")
+        userService.validateUserExists(userId)
 
         // Check if sleep log already exists for this date
         sleepLogRepository.findByUserIdAndDate(userId, request.sleepDate)?.let {
-            throw IllegalArgumentException("Sleep log already exists for date ${request.sleepDate}")
+            throw ResourceConflictException(MessageConstants.SLEEP_LOG_ALREADY_EXISTS.format(request.sleepDate))
         }
 
         // Calculate total time in bed
@@ -45,16 +45,14 @@ class SleepLogService(
 
     fun getLastNightSleep(userId: Long): SleepLog? {
         // Verify user exists
-        userRepository.findById(userId) 
-            ?: throw IllegalArgumentException("User with id $userId not found")
+        userService.validateUserExists(userId)
 
         return sleepLogRepository.findLastNightSleep(userId)
     }
 
     fun getLast30DaysStatistics(userId: Long): SleepStatistics? {
         // Verify user exists
-        userRepository.findById(userId) 
-            ?: throw IllegalArgumentException("User with id $userId not found")
+        userService.validateUserExists(userId)
 
         val endDate = LocalDate.now()
         val startDate = endDate.minusDays(29) // 30 days including today
