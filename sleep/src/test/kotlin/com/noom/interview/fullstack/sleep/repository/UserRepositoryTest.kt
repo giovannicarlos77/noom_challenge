@@ -2,12 +2,14 @@ package com.noom.interview.fullstack.sleep.repository
 
 import com.noom.interview.fullstack.sleep.model.User
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 
+@Disabled("This test requires a database connection - run as integration test")
 @SpringBootTest
 @ActiveProfiles("unittest")
 @Transactional
