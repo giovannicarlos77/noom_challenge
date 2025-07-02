@@ -27,7 +27,7 @@ class UserController(private val userService: UserService) {
     fun getUserById(@PathVariable id: Long): ResponseEntity<ApiResponse<User>> {
         val user = userService.getUserById(id)
         return if (user != null) {
-            ResponseEntity.ok(user)
+            ResponseEntity.ok(ApiResponse.success(user))
         } else {
             ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
